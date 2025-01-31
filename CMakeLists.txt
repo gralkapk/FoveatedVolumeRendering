@@ -34,64 +34,65 @@ set(CMAKE_AUTOMOC ON)
 # Create code from a list of Qt designer ui files
 set(CMAKE_AUTOUIC ON)
 # msvc only; mingw needs different logic
-IF(MSVC)
-    SET(QT_MISSING True)
-    # look for user-registry pointing to qtcreator
-    GET_FILENAME_COMPONENT(QT_BIN [HKEY_CURRENT_USER\\Software\\Classes\\Applications\\QtProject.QtCreator.cpp\\shell\\Open\\Command] PATH)
+# IF(MSVC)
+#     SET(QT_MISSING True)
+#     # look for user-registry pointing to qtcreator
+#     GET_FILENAME_COMPONENT(QT_BIN [HKEY_CURRENT_USER\\Software\\Classes\\Applications\\QtProject.QtCreator.cpp\\shell\\Open\\Command] PATH)
 
-    # get root path so we can search for 5.3, 5.4, 5.5, etc
-    STRING(REPLACE "/Tools" ";" QT_BIN "${QT_BIN}")
-    LIST(GET QT_BIN 0 QT_BIN)
-    #FILE(GLOB QT_VERSIONS "${QT_BIN}/5.*")
-    #LIST(SORT QT_VERSIONS)
+#     # get root path so we can search for 5.3, 5.4, 5.5, etc
+#     STRING(REPLACE "/Tools" ";" QT_BIN "${QT_BIN}")
+#     LIST(GET QT_BIN 0 QT_BIN)
+#     #FILE(GLOB QT_VERSIONS "${QT_BIN}/5.*")
+#     #LIST(SORT QT_VERSIONS)
 
-    # assume the latest version will be last alphabetically
-    #LIST(REVERSE QT_VERSIONS)
-    #LIST(GET QT_VERSIONS 0 QT_VERSION)
+#     # assume the latest version will be last alphabetically
+#     #LIST(REVERSE QT_VERSIONS)
+#     #LIST(GET QT_VERSIONS 0 QT_VERSION)
 
-    # fix any double slashes which seem to be common
-    #STRING(REPLACE "//" "/"  QT_VERSION "${QT_VERSION}")
+#     # fix any double slashes which seem to be common
+#     STRING(REPLACE "//" "/"  QT_VERSION "${QT_VERSION}")
 
-	SET(QT_VERSION "C:/Qt/5.11.2")
+# 	# SET(QT_VERSION "C:/Qt/5.11.2")
 	
-    # infer the folder from Cmake msvc_version string
-    # - qt uses (e.g.) "msvc2013"
-    # - cmake uses (e.g.) "1800"
-    # - see also https://cmake.org/cmake/help/v3.0/variable/MSVC_VERSION.html
-    if(${MSVC_VERSION} VERSION_EQUAL "1800")
-        SET(QT_MSVC 2013)
-    elseif(${MSVC_VERSION} VERSION_EQUAL "1900")
-        SET(QT_MSVC 2015)
-    elseif(${MSVC_VERSION} VERSION_GREATER "1900")
-        SET(QT_MSVC 2017)
-    endif()
+#     # infer the folder from Cmake msvc_version string
+#     # - qt uses (e.g.) "msvc2013"
+#     # - cmake uses (e.g.) "1800"
+#     # - see also https://cmake.org/cmake/help/v3.0/variable/MSVC_VERSION.html
+#     if(${MSVC_VERSION} VERSION_EQUAL "1800")
+#         SET(QT_MSVC 2013)
+#     elseif(${MSVC_VERSION} VERSION_EQUAL "1900")
+#         SET(QT_MSVC 2015)
+#     elseif(${MSVC_VERSION} VERSION_GREATER "1900")
+#         SET(QT_MSVC 2017)
+#     endif()
 
-    # check for 64-bit os
-    # may need to be removed for older compilers as it wasn't always offered
-    IF(CMAKE_SYSTEM_PROCESSOR MATCHES 64)
-        SET(QT_MSVC "${QT_MSVC}_64")
-    ENDIF()
-    SET(QT_PATH "${QT_VERSION}/msvc${QT_MSVC}")
-    SET(QT_MISSING False)
+#     # check for 64-bit os
+#     # may need to be removed for older compilers as it wasn't always offered
+#     IF(CMAKE_SYSTEM_PROCESSOR MATCHES 64)
+#         SET(QT_MSVC "${QT_MSVC}_64")
+#     ENDIF()
+#     SET(QT_PATH "${QT_VERSION}/msvc${QT_MSVC}")
+#     SET(QT_MISSING False)
 
-	IF(NOT QT_MISSING)
-		MESSAGE("-- Qt found: ${QT_PATH}")
-		SET(Qt5_DIR "${QT_PATH}/lib/cmake/Qt5/")
-		SET(Qt5Test_DIR "${QT_PATH}/lib/cmake/Qt5Test")
-	ENDIF()
-ENDIF()
+# 	IF(NOT QT_MISSING)
+# 		MESSAGE("-- Qt found: ${QT_PATH}")
+# 		SET(Qt5_DIR "${QT_PATH}/lib/cmake/Qt5/")
+# 		SET(Qt5Test_DIR "${QT_PATH}/lib/cmake/Qt5Test")
+# 	ENDIF()
+# ENDIF()
 
 # Find Qt libraries
 FIND_PACKAGE(Qt5 COMPONENTS Core Gui Widgets Concurrent REQUIRED)
+set(QT_PATH "${Qt5_DIR}/../../../")
 
 # Check Qt minor version
-if (Qt5Core_FOUND)
-    if (Qt5Core_VERSION VERSION_LESS 5.10.0)
-        message(FATAL_ERROR "Minimum supported Qt5 version is 5.10.0!")
-    endif()
-else()
-    message(SEND_ERROR "The Qt5 library could not be found!")
-endif(Qt5Core_FOUND)
+# if (Qt5Core_FOUND)
+#     if (Qt5Core_VERSION VERSION_LESS 5.10.0)
+#         message(FATAL_ERROR "Minimum supported Qt5 version is 5.10.0!")
+#     endif()
+# else()
+#     message(SEND_ERROR "The Qt5 library could not be found!")
+# endif(Qt5Core_FOUND)
 
 IF(${Qt5Gui_OPENGL_IMPLEMENTATION} MATCHES "GLES")
      MESSAGE(STATUS "Building an OpenGL ES build (${Qt5Gui_OPENGL_IMPLEMENTATION})")

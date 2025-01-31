@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <random>
+
 #include <QObject>
 #include <QWidget>
 #include <QDir>
@@ -42,7 +44,6 @@
 #include <QPainter>
 #include <QElapsedTimer>
 #include <qcheckbox.h>
-#include <QRandomGenerator>
 #include <QDirIterator>
 
 #include "src/core/volumerendercl.h"
@@ -302,7 +303,7 @@ private:
     QGradientStops _tffStops;
 	QElapsedTimer _timer;
 	RenderingMethod _renderingMethod;	// selects the rendering method which will be called within paintGL()
-    QRandomGenerator64 _prng;
+    std::mt19937_64 _prng;
     Benchmark _bench;
     QStringList _interactionSequence;
     int _interactionSequencePos = 0;

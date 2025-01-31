@@ -961,7 +961,7 @@ void VolumeRenderCL::loadIndexAndSamplingMap(const std::string &fileNameIndexMap
 	try {
 		std::cout << "Trying to open: " << fileNameIndexMap << std::endl;
 		QImage im = QImage(QString::fromStdString(fileNameIndexMap));
-		std::cout << "Loaded Index Map with size: " << im.sizeInBytes() << " bytes and format: " << im.format() << std::endl;
+		std::cout << "Loaded Index Map with size: " << im.byteCount() << " bytes and format: " << im.format() << std::endl;
 		// std::cout << "width: " << im.width() << std::endl;
         _indexMap = cl::Image2D(_contextCL, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, im_format, im.width(), im.height(), 0, im.bits());
         _indexMapExtends = { im.width(), im.height() };
@@ -973,7 +973,7 @@ void VolumeRenderCL::loadIndexAndSamplingMap(const std::string &fileNameIndexMap
 	try {
 		std::cout << "Trying to open: " << fileNameSamplingMap << std::endl;
 		QImage sm = QImage(QString::fromStdString(fileNameSamplingMap));
-		std::cout << "Loaded Sampling Map with size: " << sm.sizeInBytes() << " bytes and format: " << sm.format() << std::endl;
+		std::cout << "Loaded Sampling Map with size: " << sm.byteCount() << " bytes and format: " << sm.format() << std::endl;
 		
         struct indexStruct
         {

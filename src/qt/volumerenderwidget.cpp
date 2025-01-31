@@ -1963,7 +1963,7 @@ void VolumeRenderWidget::toggleBenchmark() //QString logFileName, int gaze_itera
 			_bench.gaze_iterations = gaze_iterations;
 		}
         
-        _prng = QRandomGenerator64(42);
+        _prng = std::mt19937_64(42);
         _bench.iteration = 0;
     }
     updateView();
