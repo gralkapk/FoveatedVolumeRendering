@@ -113,6 +113,10 @@ VolumeRenderWidget::VolumeRenderWidget(QWidget *parent)
  */
 VolumeRenderWidget::~VolumeRenderWidget()
 {
+    if (_eyetracker)
+        tobii.device_destroy(_eyetracker);
+    if (_tobii_api)
+        tobii.api_destroy(_tobii_api);
 }
 
 
@@ -535,6 +539,9 @@ void VolumeRenderWidget::showSelectEyetrackingDevice()
 	}
 	if (ok && !platform.isEmpty() || only_one && !devices.empty())
 	{
+        if (_eyetracker) {
+            auto status = tobii.device_destroy(_eyetracker);
+        }
         auto status = tobii.device_create(_tobii_api, const_cast<char*>(devices[eyetracker_index].c_str()), TOBII_FIELD_OF_USE_INTERACTIVE, &_eyetracker);
         _eyetracker_url = devices[eyetracker_index];
 

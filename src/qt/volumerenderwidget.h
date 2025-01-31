@@ -268,8 +268,8 @@ private:
 
 	// Eyetracking
     tobii_dispatch tobii;
-    void* _tobii_api;
-	void* _eyetracker;	// points to the currently selected eyetracker
+    void* _tobii_api = nullptr;
+	void* _eyetracker = nullptr;	// points to the currently selected eyetracker
     std::string _eyetracker_url;
 	tobii_gaze_point_t _gaze_data;	// holds the latest collected data from the eyetracking callback
 	cl_float2 _last_valid_gaze_position;
