@@ -63,6 +63,10 @@ static const char *pFsScreenQuadSource =
     "}\n";
 
 
+static void console_log(void*, tobii_log_level_t, char* text) {
+    std::cout << text << std::endl;
+}
+
 /**
  * @brief VolumeRenderWidget::VolumeRenderWidget
  * @param parent
@@ -93,6 +97,14 @@ VolumeRenderWidget::VolumeRenderWidget(QWidget *parent)
     , _renderingMethod(Standard)
 {
     this->setMouseTracking(true);
+
+    tobii_custom_log_t log;
+    log.log_context = nullptr;
+    log.log_func = console_log;
+    auto status = tobii.api_create(&_tobii_api, nullptr, &log);
+    if (status != TOBII_ERROR_NO_ERROR) {
+        throw std::runtime_error("Could not create tobii API instance!");
+    }
 }
 
 
@@ -449,15 +461,15 @@ void VolumeRenderWidget::setEyetracking(bool eyetracking)
 	if (check_eyetracker_availability(eyetracking)) {
 		if (eyetracking) {
 			// start using eyetracking: subscribe to data
-			TobiiResearchStatus status = tobii_research_subscribe_to_gaze_data(_eyetracker, &VolumeRenderWidget::gaze_data_callback, &_gaze_data);
-			if (status != TOBII_RESEARCH_STATUS_OK) {
+            auto status = tobii.gaze_point_subscribe(_eyetracker, &VolumeRenderWidget::gaze_data_callback, &_gaze_data);
+			if (status != TOBII_ERROR_NO_ERROR) {
 				qCritical() << "Something went wrong when trying to subscribe to eyetracker data.\n";
 			}
 		}
 		else {
 			// stop using eyetracking: unsubscribe to data
-			TobiiResearchStatus status = tobii_research_unsubscribe_from_gaze_data(_eyetracker, &VolumeRenderWidget::gaze_data_callback);
-			if (status != TOBII_RESEARCH_STATUS_OK) {
+            auto status = tobii.gaze_point_unsubscribe(_eyetracker);
+			if (status != TOBII_ERROR_NO_ERROR) {
 				qCritical() << "Something went wrong when trying to unsubscribe to eyetracker data.\n";
 			}
 
@@ -474,37 +486,33 @@ void VolumeRenderWidget::setEyetracking(bool eyetracking)
 	// std::cout << "use eyetracking: " << _useEyetracking << std::endl;
 }
 
+static void url_receiver(char* url, void* user_data) {
+    auto device_list = static_cast<std::vector<std::string> *>(user_data);
+    device_list->push_back(url);
+}
+
 /*
 Shows the available eyetracking devices in a drop down menu and lets the user select one of them.
 */
 void VolumeRenderWidget::showSelectEyetrackingDevice()
 {
-	TobiiResearchEyeTrackers* eyetrackers = NULL;
-	std::vector<std::string> eyetracker_device_names;
+    std::vector<std::string> devices;
+    auto status = tobii.enumerate_local_device_urls(_tobii_api, url_receiver, &devices);
+    if (status != TOBII_ERROR_NO_ERROR) {
+        qCritical() << "Finding trackers failed. Error: " << status << "\n";
+        return;
+    }
+    else {
+        if (devices.empty()) {
+            qDebug() << "No Eyetrackers found!\n";
+        }
+    }
+	
+    std::vector<std::string> eyetracker_device_names;
 
-	TobiiResearchStatus result;
-	size_t i = 0;
-	result = tobii_research_find_all_eyetrackers(&eyetrackers);
-	if (result != TOBII_RESEARCH_STATUS_OK) {
-		qCritical() << "Finding trackers failed. Error: " << result << "\n";
-		return;
-	}
-	else {
-		if (eyetrackers->count == 0) {
-			qDebug() << "No Eyetrackers found!\n";
-		}
-	}
-
-	for (i = 0; i < eyetrackers->count; i++) {
-		TobiiResearchEyeTracker* eyetracker = eyetrackers->eyetrackers[i];
-		char* device_name;
-		char* serial_number;
-		tobii_research_get_device_name(eyetracker, &device_name);
-		tobii_research_get_serial_number(eyetracker, &serial_number);
-		eyetracker_device_names.push_back(std::string(device_name).append(", serial number: ").append(std::string(serial_number)));
-		tobii_research_free_string(device_name);
-		tobii_research_free_string(serial_number);
-	}
+    for (auto const& d : devices) {
+        eyetracker_device_names.push_back(std::string("serial number : ") + d);
+    }
 
 	QStringList platforms;
 	bool ok = false;
@@ -525,13 +533,13 @@ void VolumeRenderWidget::showSelectEyetrackingDevice()
 		only_one = true;
 		eyetracker_index = 0;
 	}
-	if (ok && !platform.isEmpty() || only_one && eyetrackers->count > 0)
+	if (ok && !platform.isEmpty() || only_one && !devices.empty())
 	{
-		_eyetracker = eyetrackers->eyetrackers[eyetracker_index];
+        auto status = tobii.device_create(_tobii_api, const_cast<char*>(devices[eyetracker_index].c_str()), TOBII_FIELD_OF_USE_INTERACTIVE, &_eyetracker);
+        _eyetracker_url = devices[eyetracker_index];
+
 		qDebug() << QString("Selected Eyetracker: ").append(QString::fromStdString(eyetracker_device_names[eyetracker_index]));
 	}
-
-	tobii_research_free_eyetrackers(eyetrackers);
 }
 
 #ifdef _WIN32
@@ -659,28 +667,27 @@ bool VolumeRenderWidget::check_eyetracker_availability(bool eyetracking)
         return _eyetracker != nullptr;
     }
     else {
-        TobiiResearchEyeTrackers* eyetrackers = NULL;
+        std::vector<std::string> devices;
+        auto status = tobii.enumerate_local_device_urls(_tobii_api, url_receiver, &devices);
 
-        TobiiResearchStatus result;
-        result = tobii_research_find_all_eyetrackers(&eyetrackers);
-        if (result != TOBII_RESEARCH_STATUS_OK) {
-            qCritical() << "Finding trackers to check status failed. Error: " << result << "\n";
+        if (status != TOBII_ERROR_NO_ERROR) {
+            qCritical() << "Finding trackers to check status failed. Error: " << status << "\n";
             return false;
         }
 
         bool eyetracker_exists = false;
-        for (int i = 0; i < eyetrackers->count; i++) {
-            if (_eyetracker == eyetrackers->eyetrackers[i]) {
+        for (auto const& d : devices) {
+            if (_eyetracker_url == d) {
                 eyetracker_exists = true;
             }
         }
-        tobii_research_free_eyetrackers(eyetrackers);
+        
         return eyetracker_exists;
     }
 
 }
 
-void VolumeRenderWidget::gaze_data_callback(TobiiResearchGazeData * gaze_data, void * user_data)
+void VolumeRenderWidget::gaze_data_callback(tobii_gaze_point_t* gaze_data, void * user_data)
 {
 	memcpy(user_data, gaze_data, sizeof(*gaze_data));
 }
@@ -706,10 +713,16 @@ void VolumeRenderWidget::paintGL()
         }
         else
         {
-            if (_useEyetracking && _gaze_data.right_eye.gaze_point.validity == TOBII_RESEARCH_VALIDITY_VALID)
+            if (_useEyetracking) {
+                auto status = tobii.device_process_callbacks(_eyetracker);
+                if (status != TOBII_ERROR_NO_ERROR) {
+                    throw std::runtime_error("Failed running callbacks.");
+                }
+            }
+            if (_useEyetracking && _gaze_data.validity == TOBII_VALIDITY_VALID)
             {
-					lcpf.x = _gaze_data.right_eye.gaze_point.position_on_display_area.x;
-					lcpf.y = _gaze_data.right_eye.gaze_point.position_on_display_area.y;
+					lcpf.x = _gaze_data.position.x;
+					lcpf.y = _gaze_data.position.y;
                     _last_valid_gaze_position = lcpf;
 			}
             else

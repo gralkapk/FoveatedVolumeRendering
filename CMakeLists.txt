@@ -112,6 +112,7 @@ set(raycast_headers
   src/qt/hoverpoints.h
   src/core/volumerendercl.h
   inc/CL/cl2.hpp
+  inc/tobii.h
   )
 
 # set sources

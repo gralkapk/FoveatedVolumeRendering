@@ -48,11 +48,7 @@
 
 #include "src/core/volumerendercl.h"
 
-#include <inc/TOBIIRESEARCH/tobii_research.h>
-#include <inc/TOBIIRESEARCH/tobii_research_eyetracker.h>
-#include <inc/TOBIIRESEARCH/tobii_research_streams.h>
-#include <inc/TOBIIRESEARCH/tobii_research_calibration.h>
-
+#include "inc/tobii.h"
 
 struct Benchmark
 {
@@ -219,7 +215,7 @@ private:
 
 	// Eyetracking
 	bool check_eyetracker_availability(bool eyetracking);	// Checks if the currently selected eyetracker (_eyetracker) exists
-	static void gaze_data_callback(TobiiResearchGazeData *gaze_data, void *user_data);
+	static void gaze_data_callback(tobii_gaze_point_t* gaze_data, void *user_data);
 
     /**
      * @brief Initialize the OpenCL volume renderer.
@@ -271,8 +267,11 @@ private:
     int _timestep;
 
 	// Eyetracking
-	TobiiResearchEyeTracker* _eyetracker;	// points to the currently selected eyetracker
-	TobiiResearchGazeData _gaze_data;	// holds the latest collected data from the eyetracking callback
+    tobii_dispatch tobii;
+    void* _tobii_api;
+	void* _eyetracker;	// points to the currently selected eyetracker
+    std::string _eyetracker_url;
+	tobii_gaze_point_t _gaze_data;	// holds the latest collected data from the eyetracking callback
 	cl_float2 _last_valid_gaze_position;
 
 	// Monitorselection
